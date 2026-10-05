@@ -44,9 +44,12 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
 
-      - name: Install dependencies and PyInstaller
+      - name: Create venv and install dependencies
         run: |
-          uv sync --all-extras || true
+          uv venv
+          if [ -f requirements.txt ]; then
+            uv pip install -r requirements.txt
+          fi
           uv pip install pyinstaller
 
       - name: Build executable
