@@ -18,12 +18,13 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { os: windows-latest, name: windows-x86_64, python_arch: x64 }
-          - { os: ubuntu-latest, name: linux-x86_64, python_arch: x64 }
-          - { os: macos-14, name: darwin-arm64, python_arch: arm64 }
-          # Intel macOS runners are being retired: build x86_64 on Apple
-          # Silicon with x64 Python under Rosetta 2, as Anna's examples do.
-          - { os: macos-15, name: darwin-x86_64, python_arch: x64 }
+          - { os: windows-latest, name: windows-x86_64, python_arch: x64, pyi_arch: "", file_arch: "x86-64" }
+          - { os: ubuntu-latest, name: linux-x86_64, python_arch: x64, pyi_arch: "", file_arch: "x86-64" }
+          - { os: macos-14, name: darwin-arm64, python_arch: arm64, pyi_arch: arm64, file_arch: "arm64" }
+          # Intel macOS runners are being retired. The python.org build on
+          # macOS is universal2, so PyInstaller can cross-target x86_64 from
+          # an Apple Silicon runner with --target-arch.
+          - { os: macos-14, name: darwin-x86_64, python_arch: arm64, pyi_arch: x86_64, file_arch: "x86_64" }
     defaults:
       run:
         shell: bash
@@ -40,9 +41,21 @@ jobs:
         run: python -m pip install --upgrade pip pyinstaller "pypdf>=4"
 
       - name: Build binary
-        run: pyinstaller --onefile --clean --noupx --name cyberai-study-agent cyberai_study_agent_plugin.py
+        run: |
+          ARCH_FLAG=""
+          [ -n "${{ matrix.platform.pyi_arch }}" ] && ARCH_FLAG="--target-arch ${{ matrix.platform.pyi_arch }}"
+          pyinstaller --onefile --clean --noupx $ARCH_FLAG --name cyberai-study-agent cyberai_study_agent_plugin.py
+
+      - name: Check binary architecture
+        if: runner.os != 'Windows'
+        run: |
+          BIN=dist/cyberai-study-agent
+          [ "$RUNNER_OS" = "Windows" ] && BIN=dist/cyberai-study-agent.exe
+          file "$BIN"
+          file "$BIN" | grep -q "${{ matrix.platform.file_arch }}"
 
       - name: Smoke test (describe over stdio)
+        continue-on-error: ${{ matrix.platform.name == 'darwin-x86_64' }}
         run: |
           BIN=dist/cyberai-study-agent
           [ "$RUNNER_OS" = "Windows" ] && BIN=dist/cyberai-study-agent.exe
