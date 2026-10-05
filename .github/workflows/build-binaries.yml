@@ -1,0 +1,78 @@
+name: Build Executables
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x86_64
+            artifact_name: cyberai-study-agent-windows-x86_64.exe
+            output_name: cyberai-study-agent-windows-x86_64.exe
+          - os: ubuntu-latest
+            arch: x86_64
+            artifact_name: cyberai-study-agent-linux-x86_64
+            output_name: cyberai-study-agent-linux-x86_64
+          - os: macos-13
+            arch: x86_64
+            artifact_name: cyberai-study-agent-darwin-x86_64
+            output_name: cyberai-study-agent-darwin-x86_64
+          - os: macos-latest
+            arch: arm64
+            artifact_name: cyberai-study-agent-darwin-aarch64
+            output_name: cyberai-study-agent-darwin-aarch64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv and dependencies
+        run: |
+          pip install uv pyinstaller
+          uv pip install --system -r <(uv pip compile pyproject.toml 2>/dev/null || echo "") || pip install -r requirements.txt || true
+
+      - name: Build executable with PyInstaller
+        shell: bash
+        run: |
+          pyinstaller --onefile --name binary cyberai_study_agent_plugin.py
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            mv dist/binary.exe "dist/${{ matrix.output_name }}"
+          else
+            mv dist/binary "dist/${{ matrix.output_name }}"
+          fi
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.output_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/**/*
