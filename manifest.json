@@ -1,0 +1,65 @@
+{
+  "schema": 2,
+  "required_executas": [
+    {
+      "tool_id": "tool-dev-cyberai-study-agent"
+    }
+  ],
+  "tags": [
+    "study",
+    "rag",
+    "pdf",
+    "citations",
+    "cybersecurity",
+    "ai"
+  ],
+  "ui": {
+    "bundle": {
+      "format": "static-spa",
+      "entry": "index.html",
+      "external_origins": []
+    },
+    "views": [
+      {
+        "name": "main",
+        "title": "CyberAI Study Agent",
+        "default": true,
+        "default_size": {
+          "w": 960,
+          "h": 680
+        },
+        "min_size": {
+          "w": 360,
+          "h": 480
+        },
+        "resizable": true
+      }
+    ],
+    "host_api": {
+      "tools": [
+        "tool-dev-cyberai-study-agent"
+      ],
+      "storage": [
+        "get",
+        "set"
+      ],
+      "window": [
+        "set_title",
+        "ready"
+      ],
+      "llm": [
+        "complete",
+        "embed"
+      ]
+    },
+    "csp_overrides": {},
+    "state_merge": "last_writer_wins"
+  },
+  "dev": {
+    "fixtures": [
+      "fixtures/*.jsonl"
+    ],
+    "seed_storage": {},
+    "user_id": 1
+  }
+}

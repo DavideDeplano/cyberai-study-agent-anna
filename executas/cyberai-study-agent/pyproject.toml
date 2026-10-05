@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tool-dev-cyberai-study-agent"
+version = "0.1.0"
+description = "Executa for the cyberai-study-agent Anna App"
+requires-python = ">=3.10"
+dependencies = ["pypdf>=4"]
+
+[project.scripts]
+"tool-dev-cyberai-study-agent" = "cyberai_study_agent_plugin:main"
+
+[tool.setuptools]
+py-modules = ["cyberai_study_agent_plugin"]
+packages = ["executa_sdk"]

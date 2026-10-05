@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CyberAI Study Agent</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./app.js" type="module"></script>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="library" aria-label="Your study material">
+        <header class="library-head">
+          <h1>Study Agent</h1>
+          <p class="hint">Answers come only from the PDFs below, with the page they come from.</p>
+        </header>
+
+        <div class="add">
+          <label class="course-field">
+            <span>Course</span>
+            <input id="course-input" list="course-list" placeholder="e.g. Industrial Software" autocomplete="off" />
+            <datalist id="course-list"></datalist>
+          </label>
+          <input id="file-input" type="file" accept="application/pdf,.pdf" multiple hidden />
+          <button id="add-btn" class="btn btn-primary" type="button">Add PDFs</button>
+          <p id="add-status" class="add-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="filter">
+          <label for="course-filter">Search in</label>
+          <select id="course-filter"><option value="">All courses</option></select>
+        </div>
+
+        <ul id="doc-list" class="doc-list"></ul>
+        <p id="doc-empty" class="doc-empty">No PDFs yet. Add your first course PDF to start asking questions.</p>
+      </aside>
+
+      <main class="chat">
+        <div id="thread" class="thread" aria-live="polite">
+          <div id="welcome" class="welcome">
+            <h2>Ask about your course material</h2>
+            <p>Write in any language. Every claim in the answer cites a file and page; select a citation to read the passage it comes from.</p>
+          </div>
+        </div>
+
+        <form id="ask-form" class="composer">
+          <textarea id="question" rows="1" placeholder="Ask a question about your PDFs" aria-label="Your question"></textarea>
+          <div class="composer-actions">
+            <button id="new-chat" class="btn btn-quiet" type="button" title="Start a new conversation">New chat</button>
+            <button id="ask-btn" class="btn btn-primary" type="submit">Ask</button>
+          </div>
+        </form>
+      </main>
+
+      <aside id="excerpt" class="excerpt" hidden aria-label="Cited passage">
+        <header class="excerpt-head">
+          <div>
+            <p id="excerpt-source" class="excerpt-source"></p>
+            <p id="excerpt-page" class="excerpt-page"></p>
+          </div>
+          <button id="excerpt-close" class="btn btn-quiet" type="button" aria-label="Close passage">Close</button>
+        </header>
+        <div id="excerpt-body" class="excerpt-body"></div>
+      </aside>
+    </div>
+  </body>
+</html>

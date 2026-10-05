@@ -1,0 +1,2 @@
+cyberai_study_agent_plugin
+executa_sdk

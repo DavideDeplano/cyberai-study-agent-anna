@@ -1,0 +1,2 @@
+[console_scripts]
+tool-dev-cyberai-study-agent = cyberai_study_agent_plugin:main

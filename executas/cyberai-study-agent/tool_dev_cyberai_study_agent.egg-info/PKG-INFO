@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: tool-dev-cyberai-study-agent
+Version: 0.1.0
+Summary: Executa for the cyberai-study-agent Anna App
+Requires-Python: >=3.10
+Requires-Dist: pypdf>=4
