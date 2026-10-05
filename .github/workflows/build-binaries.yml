@@ -15,6 +15,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: executas/cyberai-study-agent
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +51,7 @@ jobs:
           if [ -f requirements.txt ]; then
             uv pip install -r requirements.txt
           fi
-          uv pip install pyinstaller
+          uv pip install pyinstaller pypdf
 
       - name: Build executable
         run: |
@@ -65,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary_name }}
-          path: dist/${{ matrix.binary_name }}
+          path: executas/cyberai-study-agent/dist/${{ matrix.binary_name }}
 
   release:
     needs: build
