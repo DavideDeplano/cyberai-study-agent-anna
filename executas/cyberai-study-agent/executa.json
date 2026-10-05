@@ -1,1 +1,54 @@
-{"tool_id": "tool-dev-cyberai-study-agent", "type": "python", "command": ["uv", "run", "--project", ".", "python", "cyberai_study_agent_plugin.py"]}
+{
+  "slug": "cyberai-study-agent",
+  "name": "CyberAI Study Agent",
+  "version": "0.1.1",
+  "executa_type": "tool",
+  "description": "Local backend of the CyberAI Study Agent app: PDF text extraction, chunking, on-disk vector index and similarity search.",
+  "tool_id": "tool-dev-cyberai-study-agent",
+  "type": "python",
+  "enabled": true,
+  "command": [
+    "uv",
+    "run",
+    "--project",
+    ".",
+    "python",
+    "cyberai_study_agent_plugin.py"
+  ],
+  "distribution": {
+    "active": "binary",
+    "profiles": {
+      "local": {
+        "type": "local",
+        "supports_protocol": true
+      },
+      "binary": {
+        "type": "binary",
+        "executable_name": "cyberai-study-agent",
+        "supports_protocol": true,
+        "binary_urls": {
+          "windows-x86_64": {
+            "url": "https://github.com/DavideDeplano/cyberai-study-agent-anna/releases/download/v0.1.1/cyberai-study-agent-windows-x86_64.zip",
+            "entrypoint": "cyberai-study-agent.exe",
+            "format": "zip"
+          },
+          "linux-x86_64": {
+            "url": "https://github.com/DavideDeplano/cyberai-study-agent-anna/releases/download/v0.1.1/cyberai-study-agent-linux-x86_64.tar.gz",
+            "entrypoint": "cyberai-study-agent",
+            "format": "tar.gz"
+          },
+          "darwin-arm64": {
+            "url": "https://github.com/DavideDeplano/cyberai-study-agent-anna/releases/download/v0.1.1/cyberai-study-agent-darwin-arm64.tar.gz",
+            "entrypoint": "cyberai-study-agent",
+            "format": "tar.gz"
+          },
+          "darwin-x86_64": {
+            "url": "https://github.com/DavideDeplano/cyberai-study-agent-anna/releases/download/v0.1.1/cyberai-study-agent-darwin-x86_64.tar.gz",
+            "entrypoint": "cyberai-study-agent",
+            "format": "tar.gz"
+          }
+        }
+      }
+    }
+  }
+}

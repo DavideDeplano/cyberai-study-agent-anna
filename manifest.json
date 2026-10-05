@@ -2,7 +2,7 @@
   "schema": 2,
   "required_executas": [
     {
-      "tool_id": "tool-dev-cyberai-study-agent"
+      "tool_id": "bundled:cyberai-study-agent"
     }
   ],
   "tags": [
@@ -37,7 +37,7 @@
     ],
     "host_api": {
       "tools": [
-        "tool-dev-cyberai-study-agent"
+        "required:bundled:cyberai-study-agent"
       ],
       "storage": [
         "get",
