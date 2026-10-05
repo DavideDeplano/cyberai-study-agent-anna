@@ -64,6 +64,7 @@ input, select, textarea {
 .add-status.error { color: var(--error); }
 
 .filter { display: grid; gap: 4px; font-size: 13px; color: var(--ink-soft); }
+.filter select, .course-field input { width: 100%; min-width: 0; }
 
 .doc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .doc {

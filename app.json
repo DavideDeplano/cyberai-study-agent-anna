@@ -1,10 +1,18 @@
 {
   "slug": "cyberai-study-agent",
   "name": "CyberAI Study Agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "tagline": "Ask questions about your course PDFs and get answers with page citations.",
   "description": "Add the PDFs of your courses (slides, notes, papers) and ask questions about them in any language. Every answer is grounded in your material and cites the file and page it comes from, so you can check it. If the material does not cover the question, the app says so instead of guessing. PDFs are processed on your machine; only the text excerpts needed for search and answers are sent to the model.",
   "category": "productivity",
+  "logo_file": "assets/logo.svg",
+  "screenshots": [
+    "assets/screenshot-1.png",
+    "assets/screenshot-2.png"
+  ],
+  "homepage_url": "https://github.com/DavideDeplano/cyberai-study-agent-anna",
+  "support_url": "https://github.com/DavideDeplano/cyberai-study-agent-anna/issues",
+  "privacy_url": "https://github.com/DavideDeplano/cyberai-study-agent-anna#privacy",
   "bundled_executas": {
     "cyberai-study-agent": {
       "path": "./executas/cyberai-study-agent"
