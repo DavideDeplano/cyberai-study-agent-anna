@@ -12,6 +12,9 @@ jobs:
   build:
     name: Build on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -33,26 +36,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.11'
+          version: "latest"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller uv
-          uv pip install --system -e . 2>nul || uv pip install --system -e . 2>/dev/null || pip install -r requirements.txt || true
+      - name: Set up Python
+        run: uv python install 3.11
 
-      - name: Build executable with PyInstaller (Windows)
-        if: runner.os == 'Windows'
+      - name: Install dependencies and PyInstaller
         run: |
-          pyinstaller --onefile --name cyberai-study-agent-windows-x86_64 cyberai_study_agent_plugin.py
+          uv sync --all-extras || true
+          uv pip install pyinstaller
 
-      - name: Build executable with PyInstaller (Unix)
-        if: runner.os != 'Windows'
+      - name: Build executable
         run: |
-          pyinstaller --onefile --name ${{ matrix.binary_name }} cyberai_study_agent_plugin.py
+          uv run pyinstaller --onefile --name binary cyberai_study_agent_plugin.py
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp dist/binary.exe dist/${{ matrix.binary_name }}
+          else
+            cp dist/binary dist/${{ matrix.binary_name }}
+          fi
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
