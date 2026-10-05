@@ -18,20 +18,16 @@ jobs:
         include:
           - os: windows-latest
             arch: x86_64
-            artifact_name: cyberai-study-agent-windows-x86_64.exe
-            output_name: cyberai-study-agent-windows-x86_64.exe
+            binary_name: cyberai-study-agent-windows-x86_64.exe
           - os: ubuntu-latest
             arch: x86_64
-            artifact_name: cyberai-study-agent-linux-x86_64
-            output_name: cyberai-study-agent-linux-x86_64
+            binary_name: cyberai-study-agent-linux-x86_64
           - os: macos-13
             arch: x86_64
-            artifact_name: cyberai-study-agent-darwin-x86_64
-            output_name: cyberai-study-agent-darwin-x86_64
+            binary_name: cyberai-study-agent-darwin-x86_64
           - os: macos-latest
             arch: arm64
-            artifact_name: cyberai-study-agent-darwin-aarch64
-            output_name: cyberai-study-agent-darwin-aarch64
+            binary_name: cyberai-study-agent-darwin-aarch64
 
     steps:
       - name: Checkout code
@@ -42,26 +38,27 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install uv and dependencies
+      - name: Install dependencies
         run: |
-          pip install uv pyinstaller
-          uv pip install --system -r <(uv pip compile pyproject.toml 2>/dev/null || echo "") || pip install -r requirements.txt || true
+          python -m pip install --upgrade pip
+          pip install pyinstaller uv
+          uv pip install --system -e . 2>nul || uv pip install --system -e . 2>/dev/null || pip install -r requirements.txt || true
 
-      - name: Build executable with PyInstaller
-        shell: bash
+      - name: Build executable with PyInstaller (Windows)
+        if: runner.os == 'Windows'
         run: |
-          pyinstaller --onefile --name binary cyberai_study_agent_plugin.py
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            mv dist/binary.exe "dist/${{ matrix.output_name }}"
-          else
-            mv dist/binary "dist/${{ matrix.output_name }}"
-          fi
+          pyinstaller --onefile --name cyberai-study-agent-windows-x86_64 cyberai_study_agent_plugin.py
+
+      - name: Build executable with PyInstaller (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          pyinstaller --onefile --name ${{ matrix.binary_name }} cyberai_study_agent_plugin.py
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.output_name }}
+          name: ${{ matrix.binary_name }}
+          path: dist/${{ matrix.binary_name }}
 
   release:
     needs: build
@@ -71,8 +68,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-artifacts/**/*
+          files: release-artifacts/*
