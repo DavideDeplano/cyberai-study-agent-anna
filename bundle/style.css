@@ -63,20 +63,26 @@ input, select, textarea {
 .add-status { margin: 0; font-size: 13px; color: var(--ink-soft); min-height: 1.5em; }
 .add-status.error { color: var(--error); }
 
-.filter { display: grid; gap: 4px; font-size: 13px; color: var(--ink-soft); }
-.filter select, .course-field input { width: 100%; min-width: 0; }
+.course-field input { width: 100%; min-width: 0; }
 
+.library-list { display: grid; gap: 6px; }
+.select-bar { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+.select-bar span { margin-right: auto; }
 .doc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.doc-group { padding: 10px 6px 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
+.doc-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .doc {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 2px 8px;
   padding: 8px 6px;
   border-bottom: 1px solid var(--rule);
 }
-.doc-name { font-size: 14px; overflow-wrap: anywhere; }
-.doc-meta { grid-column: 1; font-size: 12px; color: var(--ink-soft); }
-.doc-remove { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.doc-check { grid-row: 1 / span 2; align-self: start; margin-top: 4px; accent-color: var(--teal); }
+.doc-name { grid-column: 2; font-size: 14px; overflow-wrap: anywhere; }
+.doc-meta { grid-column: 2; font-size: 12px; color: var(--ink-soft); }
+.doc-remove { grid-row: 1 / span 2; grid-column: 3; align-self: center; }
+.doc.off .doc-name, .doc.off .doc-meta { opacity: 0.55; }
 .doc-empty { margin: 0; font-size: 13px; color: var(--ink-soft); }
 
 /* Buttons */
@@ -101,7 +107,8 @@ input, select, textarea {
 .welcome p { color: var(--ink-soft); margin: 0; }
 
 .turn { max-width: 68ch; margin: 0 auto 26px; }
-.turn-q { font-weight: 600; margin: 0 0 8px; color: var(--teal); }
+.turn-q { font-weight: 600; margin: 0 0 2px; color: var(--teal); }
+.turn-scope { margin: 0 0 8px; font-size: 12px; color: var(--ink-soft); overflow-wrap: anywhere; }
 .turn-a { font: 16px/1.65 var(--serif); }
 .turn-a p { margin: 0 0 10px; }
 .turn-a ul { margin: 0 0 10px; padding-left: 1.2em; }
@@ -134,6 +141,8 @@ input, select, textarea {
   display: grid;
   gap: 8px;
 }
+.scope { margin: 0; font-size: 12px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.scope.error { color: var(--error); }
 .composer textarea { width: 100%; resize: none; max-height: 30vh; line-height: 1.45; }
 .composer-actions { display: flex; justify-content: flex-end; gap: 8px; }
 

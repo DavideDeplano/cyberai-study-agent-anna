@@ -14,7 +14,9 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024; // base64 must fit the host frame limit
 const HISTORY_TURNS = 6;
 
 const $ = (id) => document.getElementById(id);
-const state = { anna: null, history: [], docs: [], busy: false };
+// active: names of the PDFs the next question is asked about. Every PDF
+// is active when the app opens, and each newly added PDF becomes active.
+const state = { anna: null, history: [], docs: [], active: new Set(), loaded: false, busy: false };
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -56,30 +58,96 @@ function fileToBase64(file) {
 
 // ─── Library ──────────────────────────────────────────────────────────
 
-async function refreshLibrary() {
+async function refreshLibrary(added = []) {
   const data = await tool("stats", {});
   state.docs = data.sources || [];
+  const names = new Set(state.docs.map((d) => d.source));
+  if (!state.loaded) {
+    state.docs.forEach((d) => state.active.add(d.source));
+    state.loaded = true;
+  }
+  added.forEach((n) => state.active.add(n));
+  [...state.active].forEach((n) => { if (!names.has(n)) state.active.delete(n); });
+  renderLibrary();
+  $("course-list").replaceChildren(...courses().map((c) => new Option(c)));
+}
+
+function courses() {
+  return [...new Set(state.docs.map((d) => d.course).filter(Boolean))].sort();
+}
+
+function renderLibrary() {
   const list = $("doc-list");
   list.replaceChildren();
+  const groups = new Map();
   for (const d of state.docs) {
-    const li = document.createElement("li");
-    li.className = "doc";
-    li.innerHTML = `
-      <span class="doc-name">${escapeHtml(d.source)}</span>
-      <span class="doc-meta">${d.course ? escapeHtml(d.course) + ", " : ""}${d.pages} pages</span>
-      <button class="btn btn-quiet doc-remove" type="button">Remove</button>`;
-    const rm = li.querySelector("button");
-    rm.addEventListener("click", () => removeDoc(d.source, rm));
-    list.append(li);
+    const key = d.course || "";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(d);
+  }
+  const keys = [...groups.keys()].sort((a, b) => (a === "") - (b === "") || a.localeCompare(b));
+  const showHeads = keys.length > 1 || keys[0] !== "";
+  for (const key of keys) {
+    const docs = groups.get(key);
+    if (showHeads) {
+      const head = document.createElement("li");
+      head.className = "doc-group";
+      const on = docs.filter((d) => state.active.has(d.source)).length;
+      head.innerHTML = `<label><input type="checkbox" /> <span>${escapeHtml(key || "No course")}</span></label>`;
+      const box = head.querySelector("input");
+      box.checked = on === docs.length;
+      box.indeterminate = on > 0 && on < docs.length;
+      box.addEventListener("change", () => setActive(docs.map((d) => d.source), box.checked));
+      list.append(head);
+    }
+    for (const d of docs) {
+      const li = document.createElement("li");
+      li.className = "doc";
+      li.innerHTML = `
+        <input class="doc-check" type="checkbox" aria-label="Ask about ${escapeHtml(d.source)}" />
+        <span class="doc-name">${escapeHtml(d.source)}</span>
+        <span class="doc-meta">${d.pages} pages</span>
+        <button class="btn btn-quiet doc-remove" type="button">Remove</button>`;
+      const box = li.querySelector("input");
+      box.checked = state.active.has(d.source);
+      box.addEventListener("change", () => setActive([d.source], box.checked));
+      const rm = li.querySelector("button");
+      rm.addEventListener("click", () => removeDoc(d.source, rm));
+      li.classList.toggle("off", !box.checked);
+      list.append(li);
+    }
   }
   $("doc-empty").hidden = state.docs.length > 0;
+  $("select-bar").hidden = state.docs.length < 2;
+  renderScope();
+}
 
-  const courses = [...new Set(state.docs.map((d) => d.course).filter(Boolean))].sort();
-  const filter = $("course-filter");
-  const current = filter.value;
-  filter.replaceChildren(new Option("All courses", ""), ...courses.map((c) => new Option(c, c)));
-  filter.value = courses.includes(current) ? current : "";
-  $("course-list").replaceChildren(...courses.map((c) => new Option(c)));
+function setActive(names, on) {
+  names.forEach((n) => (on ? state.active.add(n) : state.active.delete(n)));
+  renderLibrary();
+}
+
+function activeSources() {
+  return state.docs.map((d) => d.source).filter((n) => state.active.has(n));
+}
+
+function scopeLabel(names) {
+  if (names.length === 1) return names[0];
+  if (names.length === state.docs.length) return `all ${names.length} PDFs`;
+  return `${names.length} PDFs: ${names.join(", ")}`;
+}
+
+function renderScope() {
+  const names = activeSources();
+  const el = $("scope");
+  if (!state.docs.length) {
+    el.textContent = "";
+  } else if (!names.length) {
+    el.textContent = "No PDF selected. Tick at least one PDF on the left.";
+  } else {
+    el.textContent = `Asking about ${scopeLabel(names)}`;
+  }
+  el.classList.toggle("error", state.docs.length > 0 && !names.length);
 }
 
 async function removeDoc(source, button) {
@@ -116,6 +184,7 @@ async function addFiles(files) {
       }
       setAddStatus(`Reading ${file.name}…`);
       const doc = await tool("extract_pdf_bytes", { name: file.name, data: await fileToBase64(file), course });
+      if (!doc.chunks?.length) throw new Error(`${file.name}: no text found.`);
       const chunks = doc.chunks;
       for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
         setAddStatus(`Indexing ${file.name}: ${Math.min(i + EMBED_BATCH, chunks.length)} of ${chunks.length} passages`);
@@ -126,10 +195,12 @@ async function addFiles(files) {
           course: doc.course,
           chunks: batch.map((c, j) => ({ ...c, vector: vectors[j] })),
           replace: i === 0,
+          sha256: doc.sha256,
         });
       }
-      setAddStatus(`Added ${doc.source} (${doc.pages} pages).`);
-      await refreshLibrary();
+      const renamed = doc.source !== file.name ? ` A different PDF already had this name, so it was saved as ${doc.source}.` : "";
+      setAddStatus(`Added ${doc.source} (${doc.pages} pages).${renamed}`);
+      await refreshLibrary([doc.source]);
     }
   } catch (e) {
     setAddStatus(errorText(e), true);
@@ -141,8 +212,20 @@ async function addFiles(files) {
 
 // ─── Answers and citations ────────────────────────────────────────────
 
-// Matches [file.pdf, p.10] and [file.pdf, pp. 10, 12-14].
-const CITE_RE = /\[([^\[\]]+?\.pdf),\s*pp?\.\s*([\d\s,\-–]+)\]/gi;
+// Matches [file.pdf, p.10] and [file.pdf, pp. 10, 12-14]; the ".pdf" may
+// be missing. Several citations in one bracket are split on ";".
+const CITE_RE = /\[([^\[\]]+?),\s*pp?\.\s*([\d\s,\-–]+)\]/gi;
+
+// Map the file name written by the model to a PDF in scope.
+function resolveSource(name, scope) {
+  const n = name.trim().toLowerCase();
+  return (
+    scope.find((s) => s.toLowerCase() === n) ||
+    scope.find((s) => s.toLowerCase() === n + ".pdf") ||
+    scope.find((s) => s.toLowerCase().replace(/\.pdf$/, "") === n.replace(/\.pdf$/, "")) ||
+    null
+  );
+}
 
 function pagesOf(spec) {
   const pages = [];
@@ -186,7 +269,7 @@ function untex(text) {
   });
 }
 
-function renderAnswer(answer, sources) {
+function renderAnswer(answer, sources, scope) {
   const lines = escapeHtml(untex(answer)).split("\n");
   let html = "";
   let para = [];
@@ -224,13 +307,21 @@ function renderAnswer(answer, sources) {
   flush();
   closeTo(0);
 
-  // Turn citations into highlighter buttons, one per page.
-  return html.replace(CITE_RE, (_, file, spec) => {
-    const name = file.trim();
+  // Turn citations into highlighter buttons, one per page. Names in the
+  // HTML are escaped, so compare against escaped scope names.
+  const escScope = scope.map(escapeHtml);
+  html = html.replace(/\[([^\[\]]*;[^\[\]]*)\]/g, (_, inner) =>
+    inner.split(";").map((x) => `[${x.trim()}]`).join(" ")
+  );
+  return html.replace(CITE_RE, (whole, file, spec) => {
+    const idx = escScope.indexOf(resolveSource(file, escScope));
+    if (idx < 0) return whole;
+    const name = scope[idx];
+    const label = escScope[idx].replace(/\.pdf$/i, "");
     return pagesOf(spec)
       .map((page) => {
         const hit = sources.some((s) => s.source === name && s.page === page);
-        return `<button type="button" class="cite${hit ? "" : " unmatched"}" data-source="${name}" data-page="${page}" aria-pressed="false"${hit ? "" : ' title="This page was not among the retrieved passages"'}>${name.replace(/\.pdf$/i, "")}, p.${page}</button>`;
+        return `<button type="button" class="cite${hit ? "" : " unmatched"}" data-source="${escScope[idx]}" data-page="${page}" aria-pressed="false"${hit ? "" : ' title="This page was not among the retrieved passages"'}>${label}, p.${page}</button>`;
       })
       .join("");
   });
@@ -263,12 +354,13 @@ function closeExcerpt() {
   document.querySelectorAll(".cite[aria-pressed='true']").forEach((b) => b.setAttribute("aria-pressed", "false"));
 }
 
-async function ask(question) {
+async function ask(question, scope) {
   $("welcome").hidden = true;
   const turn = document.createElement("section");
   turn.className = "turn";
-  turn.innerHTML = `<p class="turn-q"></p><div class="turn-a pending">Searching your PDFs…</div>`;
+  turn.innerHTML = `<p class="turn-q"></p><p class="turn-scope"></p><div class="turn-a pending">Searching your PDFs…</div>`;
   turn.querySelector(".turn-q").textContent = question;
+  turn.querySelector(".turn-scope").textContent = `About ${scopeLabel(scope)}`;
   $("thread").append(turn);
   turn.scrollIntoView({ block: "end" });
   const out = turn.querySelector(".turn-a");
@@ -278,12 +370,12 @@ async function ask(question) {
     const found = await tool("search", {
       vector: qvec,
       question,
-      course: $("course-filter").value,
+      sources: scope,
       history: state.history.slice(-HISTORY_TURNS * 2),
     });
     if (!found.prompt) {
       out.className = "turn-a";
-      out.textContent = "There is nothing to search yet. Add a PDF from the panel on the left first.";
+      out.textContent = "The selected PDFs are no longer in your library. Add a PDF or tick another one on the left.";
       return;
     }
     out.textContent = "Writing the answer…";
@@ -295,7 +387,7 @@ async function ask(question) {
     });
     const answer = textOf(res).trim() || "The model returned an empty answer. Try rephrasing the question.";
     out.className = "turn-a";
-    out.innerHTML = renderAnswer(answer, found.sources);
+    out.innerHTML = renderAnswer(answer, found.sources, found.scope || scope);
     out.querySelectorAll(".cite:not(.unmatched)").forEach((b) =>
       b.addEventListener("click", () => showExcerpt(b.dataset.source, Number(b.dataset.page), found.sources, b))
     );
@@ -334,11 +426,14 @@ async function main() {
     e.preventDefault();
     const question = q.value.trim();
     if (!question || state.busy) return;
+    const scope = activeSources();
+    if (!state.docs.length) { setAddStatus("Add a PDF first.", true); return; }
+    if (!scope.length) { renderScope(); return; }
     state.busy = true;
     $("ask-btn").disabled = true;
     q.value = "";
     grow();
-    try { await ask(question); } finally { state.busy = false; $("ask-btn").disabled = false; q.focus(); }
+    try { await ask(question, scope); } finally { state.busy = false; $("ask-btn").disabled = false; q.focus(); }
   });
 
   $("new-chat").addEventListener("click", () => {
@@ -347,6 +442,8 @@ async function main() {
     $("welcome").hidden = false;
     closeExcerpt();
   });
+  $("select-all").addEventListener("click", () => setActive(state.docs.map((d) => d.source), true));
+  $("select-none").addEventListener("click", () => setActive(state.docs.map((d) => d.source), false));
   $("excerpt-close").addEventListener("click", closeExcerpt);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeExcerpt(); });
 

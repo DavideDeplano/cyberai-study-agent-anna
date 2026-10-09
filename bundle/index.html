@@ -13,7 +13,7 @@
       <aside class="library" aria-label="Your study material">
         <header class="library-head">
           <h1>Study Agent</h1>
-          <p class="hint">Answers come only from the PDFs below, with the page they come from.</p>
+          <p class="hint">Answers come only from the ticked PDFs below, with the file and page they come from.</p>
         </header>
 
         <div class="add">
@@ -27,12 +27,14 @@
           <p id="add-status" class="add-status" role="status" aria-live="polite"></p>
         </div>
 
-        <div class="filter">
-          <label for="course-filter">Search in</label>
-          <select id="course-filter"><option value="">All courses</option></select>
+        <div class="library-list">
+          <div id="select-bar" class="select-bar" hidden>
+            <span>Ask about</span>
+            <button id="select-all" class="btn btn-quiet" type="button">All</button>
+            <button id="select-none" class="btn btn-quiet" type="button">None</button>
+          </div>
+          <ul id="doc-list" class="doc-list"></ul>
         </div>
-
-        <ul id="doc-list" class="doc-list"></ul>
         <p id="doc-empty" class="doc-empty">No PDFs yet. Add your first course PDF to start asking questions.</p>
       </aside>
 
@@ -45,6 +47,7 @@
         </div>
 
         <form id="ask-form" class="composer">
+          <p id="scope" class="scope" role="status" aria-live="polite"></p>
           <textarea id="question" rows="1" placeholder="Ask a question about your PDFs" aria-label="Your question"></textarea>
           <div class="composer-actions">
             <button id="new-chat" class="btn btn-quiet" type="button" title="Start a new conversation">New chat</button>

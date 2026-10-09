@@ -7,7 +7,8 @@ An [Anna](https://anna.partners) app that answers questions about your course PD
 ## What it does
 
 - Add the PDFs of your courses (slides, notes, papers) and optionally tag each one with a course.
-- Ask questions in any language. Answers are built only from your material and every claim cites `[file, p.N]`.
+- Choose which PDFs to ask about: one file, a whole course, or all of them. Newly added PDFs are selected automatically.
+- Ask questions in any language. Answers are built only from the selected PDFs and every claim cites `[file, p.N]`. When several PDFs are selected, each one contributes passages to the search, so answers can combine them.
 - Select a citation to read the exact passage it comes from.
 - If your material does not cover the question, the app says so instead of guessing.
 
